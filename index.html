@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>zyg's agent - 你的全能 AI 助手</title>
+    <style>
+        /* ==================== 基础重置 ==================== */
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: #0a0a0f;
+            color: #e0e0e6;
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+        a { color: #7c8aff; text-decoration: none; transition: color 0.3s; }
+        a:hover { color: #a5adff; }
+
+        /* ==================== 动画背景粒子 ==================== */
+        #particles-canvas {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 0; pointer-events: none; opacity: 0.4;
+        }
+
+        /* ==================== 导航栏 ==================== */
+        .navbar {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 40px;
+            background: rgba(10, 10, 15, 0.8);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(124, 138, 255, 0.1);
+            transition: all 0.3s;
+        }
+        .navbar.scrolled { background: rgba(10, 10, 15, 0.95); }
+        .nav-brand {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 20px; font-weight: 700; color: #fff;
+        }
+        .nav-brand img {
+            width: 36px; height: 36px; border-radius: 10px; object-fit: cover;
+        }
+        .nav-links { display: flex; gap: 32px; }
+        .nav-links a {
+            color: #9a9ab0; font-size: 14px; font-weight: 500;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover { color: #fff; }
+        .nav-cta {
+            padding: 8px 20px; border-radius: 8px; font-size: 14px;
+            background: linear-gradient(135deg, #6366f1, #7c8aff);
+            color: #fff !important; font-weight: 600; border: none; cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.3s;
+        }
+        .nav-cta:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(99,102,241,0.4); }
+
+        /* ==================== Hero 区域 ==================== */
+        .hero {
+            position: relative; z-index: 1;
+            min-height: 100vh; display: flex; align-items: center;
+            padding: 120px 40px 80px;
+            overflow: hidden;
+        }
+        .hero-bg {
+            position: absolute; top: -50%; left: -20%; width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%);
+            border-radius: 50%; filter: blur(80px);
+            animation: float1 8s ease-in-out infinite;
+        }
+        .hero-bg-2 {
+            position: absolute; bottom: -30%; right: -10%; width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(139,92,246,0.12) 0%, transparent 70%);
+            border-radius: 50%; filter: blur(80px);
+            animation: float2 10s ease-in-out infinite;
+        }
+        @keyframes float1 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(40px, 30px); } }
+        @keyframes float2 { 0%, 100% { transform: translate(0, 0); } 50% { transform: translate(-30px, -40px); } }
+        .hero-content {
+            max-width: 1200px; margin: 0 auto;
+            display: grid; grid-template-columns: 1fr 1fr; gap: 80px;
+            align-items: center;
+        }
+        .hero-text h1 {
+            font-size: 56px; font-weight: 800; line-height: 1.15;
+            color: #fff; margin-bottom: 24px;
+        }
+        .hero-text h1 span {
+            background: linear-gradient(135deg, #7c8aff, #a78bfa, #c084fc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero-text p {
+            font-size: 18px; color: #8b8ba0; margin-bottom: 36px;
+            max-width: 500px;
+        }
+        .hero-buttons { display: flex; gap: 16px; flex-wrap: wrap; }
+        .btn-hero {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 14px 28px; border-radius: 12px; font-size: 16px;
+            font-weight: 600; cursor: pointer; border: none;
+            transition: all 0.3s;
+        }
+        .btn-hero-primary {
+            background: linear-gradient(135deg, #6366f1, #7c8aff);
+            color: #fff;
+        }
+        .btn-hero-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(99,102,241,0.4); }
+        .btn-hero-secondary {
+            background: rgba(255,255,255,0.06); color: #c0c0d0;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .btn-hero-secondary:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); }
+
+        /* Hero 右侧模拟界面 */
+        .hero-visual {
+            position: relative; perspective: 1000px;
+        }
+        .hero-mockup {
+            background: rgba(20, 20, 30, 0.9);
+            border: 1px solid rgba(124, 138, 255, 0.15);
+            border-radius: 16px; overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 40px rgba(99,102,241,0.1);
+            transform: rotateY(-5deg) rotateX(2deg);
+            transition: transform 0.5s;
+        }
+        .hero-mockup:hover { transform: rotateY(0deg) rotateX(0deg); }
+        .mockup-titlebar {
+            display: flex; align-items: center; gap: 8px;
+            padding: 12px 16px; background: rgba(30, 30, 45, 0.8);
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .mockup-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .mockup-dot:nth-child(1) { background: #ff5f57; }
+        .mockup-dot:nth-child(2) { background: #ffbd2e; }
+        .mockup-dot:nth-child(3) { background: #28ca41; }
+        .mockup-body { padding: 16px; min-height: 300px; }
+        .mockup-sidebar {
+            display: flex; gap: 12px; margin-bottom: 16px;
+        }
+        .mockup-nav-item {
+            padding: 6px 12px; border-radius: 8px; font-size: 12px;
+            background: rgba(99,102,241,0.15); color: #7c8aff;
+        }
+        .mockup-chat-bubble {
+            padding: 10px 14px; border-radius: 12px; font-size: 13px;
+            margin-bottom: 8px; max-width: 80%;
+            animation: fadeInUp 0.5s ease both;
+        }
+        .mockup-chat-bubble:nth-child(2) { animation-delay: 0.2s; }
+        .mockup-chat-bubble:nth-child(3) { animation-delay: 0.4s; }
+        .mockup-chat-bubble:nth-child(4) { animation-delay: 0.6s; }
+        .mockup-user { background: rgba(99,102,241,0.2); color: #b0b8ff; margin-left: auto; }
+        .mockup-ai { background: rgba(255,255,255,0.05); color: #c0c0d0; }
+        .mockup-tool {
+            background: rgba(34,197,94,0.1); border: 1px solid rgba(34,197,94,0.2);
+            border-radius: 8px; padding: 8px 12px; font-size: 12px;
+            color: #86efac; margin-bottom: 8px;
+        }
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ==================== 通用 Section ==================== */
+        .section {
+            position: relative; z-index: 1;
+            padding: 100px 40px;
+            max-width: 1200px; margin: 0 auto;
+        }
+        .section-label {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 6px 14px; border-radius: 20px; font-size: 13px;
+            background: rgba(99,102,241,0.1); color: #7c8aff;
+            border: 1px solid rgba(99,102,241,0.2);
+            margin-bottom: 16px; font-weight: 500;
+        }
+        .section-title {
+            font-size: 40px; font-weight: 800; color: #fff;
+            margin-bottom: 16px; line-height: 1.3;
+        }
+        .section-desc {
+            font-size: 17px; color: #7a7a90; max-width: 600px; margin-bottom: 48px;
+        }
+
+        /* ==================== 功能亮点卡片 ==================== */
+        .features-grid {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+        }
+        .feature-card {
+            background: rgba(20, 20, 30, 0.6);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px; padding: 32px;
+            transition: all 0.4s;
+            position: relative; overflow: hidden;
+        }
+        .feature-card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent, #7c8aff), transparent);
+            opacity: 0; transition: opacity 0.4s;
+        }
+        .feature-card:hover { border-color: rgba(124, 138, 255, 0.2); transform: translateY(-4px); }
+        .feature-card:hover::before { opacity: 1; }
+        .feature-icon {
+            width: 48px; height: 48px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; margin-bottom: 20px;
+            background: rgba(99,102,241,0.1);
+        }
+        .feature-card h3 {
+            font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 10px;
+        }
+        .feature-card p { font-size: 14px; color: #7a7a90; line-height: 1.7; }
+
+        /* ==================== 提供商展示 ==================== */
+        .providers-showcase { padding-top: 60px; }
+        .providers-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+        }
+        .provider-badge {
+            display: flex; align-items: center; gap: 10px;
+            padding: 14px 18px; border-radius: 12px;
+            background: rgba(20, 20, 30, 0.6);
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: all 0.3s; cursor: default;
+        }
+        .provider-badge:hover { border-color: rgba(124, 138, 255, 0.3); background: rgba(30, 30, 50, 0.8); }
+        .provider-logo {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 16px; font-weight: 700;
+            background: rgba(255,255,255,0.05);
+        }
+        .provider-info h4 { font-size: 13px; font-weight: 600; color: #e0e0e6; }
+        .provider-info p { font-size: 11px; color: #6a6a80; }
+
+        /* ==================== 工具展示 ==================== */
+        .tools-section { background: linear-gradient(180deg, transparent, rgba(99,102,241,0.03), transparent); }
+        .tools-grid {
+            display: grid; grid-template-columns: repeat(5, 1fr); gap: 16px;
+        }
+        .tool-card {
+            background: rgba(20, 20, 30, 0.6);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px; padding: 24px 16px;
+            text-align: center; transition: all 0.3s;
+        }
+        .tool-card:hover {
+            border-color: rgba(124, 138, 255, 0.25);
+            transform: translateY(-4px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+        }
+        .tool-emoji { font-size: 32px; margin-bottom: 12px; display: block; }
+        .tool-card h4 { font-size: 14px; font-weight: 600; color: #e0e0e6; margin-bottom: 6px; }
+        .tool-card p { font-size: 12px; color: #6a6a80; line-height: 1.5; }
+
+        /* ==================== 工作流程 ==================== */
+        .workflow {
+            display: flex; align-items: center; justify-content: center;
+            gap: 0; margin-top: 20px; flex-wrap: wrap; justify-content: center;
+        }
+        .workflow-step {
+            display: flex; align-items: center; gap: 14px;
+            padding: 20px 24px; background: rgba(20, 20, 30, 0.6);
+            border: 1px solid rgba(255,255,255,0.06);
+            transition: all 0.3s;
+        }
+        .workflow-step:first-child { border-radius: 14px 0 0 14px; }
+        .workflow-step:last-child { border-radius: 0 14px 14px 0; }
+        .workflow-step:hover { background: rgba(30, 30, 50, 0.8); border-color: rgba(124,138,255,0.2); }
+        .workflow-num {
+            width: 36px; height: 36px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 14px; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, #6366f1, #7c8aff);
+        }
+        .workflow-step h4 { font-size: 14px; font-weight: 600; color: #e0e0e6; }
+        .workflow-step p { font-size: 12px; color: #6a6a80; }
+        .workflow-arrow {
+            color: #3a3a50; font-size: 20px; padding: 0 4px;
+        }
+
+        /* ==================== 技术架构 ==================== */
+        .tech-stack {
+            display: flex; gap: 12px; flex-wrap: wrap; justify-content: center;
+        }
+        .tech-tag {
+            padding: 10px 20px; border-radius: 10px;
+            background: rgba(20, 20, 30, 0.6);
+            border: 1px solid rgba(255,255,255,0.06);
+            font-size: 14px; font-weight: 500; color: #c0c0d0;
+            transition: all 0.3s;
+        }
+        .tech-tag:hover { border-color: rgba(124, 138, 255, 0.3); color: #fff; }
+        .tech-tag strong { color: #7c8aff; }
+
+        /* ==================== 快速开始 ==================== */
+        .quickstart-steps {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+        }
+        .step-card {
+            background: rgba(20, 20, 30, 0.6);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px; padding: 28px;
+            position: relative;
+        }
+        .step-number {
+            position: absolute; top: -14px; left: 24px;
+            width: 28px; height: 28px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 700; color: #fff;
+            background: linear-gradient(135deg, #6366f1, #7c8aff);
+        }
+        .step-card h4 { font-size: 16px; font-weight: 700; color: #fff; margin-bottom: 10px; margin-top: 6px; }
+        .step-card p { font-size: 14px; color: #7a7a90; line-height: 1.7; }
+        .code-block {
+            background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 8px; padding: 14px 16px; margin-top: 14px;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 13px; color: #a0a0b8; overflow-x: auto;
+            white-space: pre;
+        }
+        .code-block .cmd { color: #7c8aff; }
+        .code-block .comment { color: #4a4a60; }
+
+        /* ==================== 数据统计 ==================== */
+        .stats-bar {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 24px;
+            padding: 60px 40px; max-width: 1200px; margin: 0 auto;
+            position: relative; z-index: 1;
+        }
+        .stat-item { text-align: center; }
+        .stat-number {
+            font-size: 42px; font-weight: 800;
+            background: linear-gradient(135deg, #7c8aff, #a78bfa);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .stat-label { font-size: 14px; color: #6a6a80; margin-top: 4px; }
+
+        /* ==================== 底部 CTA ==================== */
+        .cta-section {
+            position: relative; z-index: 1;
+            text-align: center; padding: 80px 40px;
+        }
+        .cta-box {
+            max-width: 700px; margin: 0 auto; padding: 60px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(139,92,246,0.1));
+            border: 1px solid rgba(124,138,255,0.15);
+            border-radius: 24px;
+        }
+        .cta-box h2 {
+            font-size: 36px; font-weight: 800; color: #fff; margin-bottom: 16px;
+        }
+        .cta-box p { font-size: 17px; color: #8b8ba0; margin-bottom: 32px; }
+
+        /* ==================== Footer ==================== */
+        .footer {
+            position: relative; z-index: 1;
+            padding: 40px;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            display: flex; justify-content: space-between; align-items: center;
+            max-width: 1200px; margin: 0 auto;
+        }
+        .footer-left { display: flex; align-items: center; gap: 10px; font-size: 14px; color: #6a6a80; }
+        .footer-left img { width: 24px; height: 24px; border-radius: 6px; object-fit: cover; }
+        .footer-right { font-size: 13px; color: #4a4a60; }
+
+        /* ==================== 滚动动画 ==================== */
+        .fade-in {
+            opacity: 0; transform: translateY(30px);
+            transition: opacity 0.8s, transform 0.8s;
+        }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        /* ==================== 响应式 ==================== */
+        @media (max-width: 1024px) {
+            .hero-content { grid-template-columns: 1fr; gap: 40px; text-align: center; }
+            .hero-text p { margin-left: auto; margin-right: auto; }
+            .hero-buttons { justify-content: center; }
+            .hero-visual { max-width: 500px; margin: 0 auto; }
+            .features-grid { grid-template-columns: repeat(2, 1fr); }
+            .providers-grid { grid-template-columns: repeat(3, 1fr); }
+            .tools-grid { grid-template-columns: repeat(3, 1fr); }
+            .quickstart-steps { grid-template-columns: 1fr; max-width: 500px; margin-left: auto; margin-right: auto; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 768px) {
+            .navbar { padding: 12px 20px; }
+            .nav-links { display: none; }
+            .hero { padding: 100px 20px 60px; }
+            .hero-text h1 { font-size: 36px; }
+            .section { padding: 60px 20px; }
+            .section-title { font-size: 28px; }
+            .features-grid { grid-template-columns: 1fr; }
+            .providers-grid { grid-template-columns: repeat(2, 1fr); }
+            .tools-grid { grid-template-columns: repeat(2, 1fr); }
+            .workflow { flex-direction: column; gap: 0; }
+            .workflow-step:first-child { border-radius: 14px 14px 0 0; }
+            .workflow-step:last-child { border-radius: 0 0 14px 14px; }
+            .workflow-arrow { transform: rotate(90deg); }
+            .footer { flex-direction: column; gap: 16px; text-align: center; }
+        }
+
+        /* ==================== 细节动画 ==================== */
+        .pulse-glow {
+            animation: pulseGlow 3s ease-in-out infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(99,102,241,0.1); }
+            50% { box-shadow: 0 0 40px rgba(99,102,241,0.2); }
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #7c8aff, #a78bfa, #c084fc, #7c8aff);
+            background-size: 300% 300%;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease infinite;
+        }
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .typing-cursor::after {
+            content: '|'; animation: blink 1s infinite; color: #7c8aff;
+        }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+    </style>
+</head>
+<body>
+
+<!-- 粒子背景 -->
+<canvas id="particles-canvas"></canvas>
+
+<!-- 导航栏 -->
+<nav class="navbar" id="navbar">
+    <div class="nav-brand">
+        <img src="logo.jpg" alt="zyg's agent">
+        <span>zyg's agent</span>
+    </div>
+    <div class="nav-links">
+        <a href="#features">功能特性</a>
+        <a href="#providers">支持的模型</a>
+        <a href="#tools">AI 工具</a>
+        <a href="#quickstart">快速开始</a>
+    </div>
+    <a href="#quickstart" class="nav-cta">立即体验</a>
+</nav>
+
+<!-- Hero 区域 -->
+<section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-bg-2"></div>
+    <div class="hero-content">
+        <div class="hero-text">
+            <h1>
+                让 AI 掌控<br>
+                <span class="gradient-text">你的计算机</span>
+            </h1>
+            <p>
+                zyg's agent 是一款纯 Python 构建的全能 AI Agent 平台。
+                接入全球 12 大 AI 提供商，赋予 AI 完整的计算机控制权限，
+                通过优雅的 Web 界面进行管理与对话。
+            </p>
+            <div class="hero-buttons">
+                <a href="#quickstart" class="btn-hero btn-hero-primary">
+                    &#9889; 快速开始
+                </a>
+                <a href="#features" class="btn-hero btn-hero-secondary">
+                    &#128640; 了解更多
+                </a>
+            </div>
+        </div>
+        <div class="hero-visual">
+            <div class="hero-mockup pulse-glow">
+                <div class="mockup-titlebar">
+                    <div class="mockup-dot"></div>
+                    <div class="mockup-dot"></div>
+                    <div class="mockup-dot"></div>
+                    <span style="margin-left: 8px; font-size: 12px; color: #6a6a80;">zyg's agent</span>
+                </div>
+                <div class="mockup-body">
+                    <div class="mockup-sidebar">
+                        <div class="mockup-nav-item">&#128172; AI 对话</div>
+                        <div class="mockup-nav-item">&#128268; API 提供商</div>
+                        <div class="mockup-nav-item">&#128221; 提示词</div>
+                    </div>
+                    <div class="mockup-chat-bubble mockup-user">帮我查看系统信息</div>
+                    <div class="mockup-tool">&#128295; 调用工具: sys_info</div>
+                    <div class="mockup-chat-bubble mockup-ai">
+                        &#10024; 系统: Windows 10 | CPU: Intel i7<br>
+                        内存: 16 GB | Python 3.12
+                    </div>
+                    <div class="mockup-chat-bubble mockup-user">帮我打开百度</div>
+                    <div class="mockup-tool">&#127760; 调用工具: open_url</div>
+                    <div class="mockup-chat-bubble mockup-ai">已在浏览器中打开 baidu.com</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 数据统计 -->
+<div class="stats-bar fade-in">
+    <div class="stat-item">
+        <div class="stat-number">12+</div>
+        <div class="stat-label">内置 AI 提供商</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">40+</div>
+        <div class="stat-label">可选 AI 模型</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">10</div>
+        <div class="stat-label">计算机控制工具</div>
+    </div>
+    <div class="stat-item">
+        <div class="stat-number">100%</div>
+        <div class="stat-label">纯 Python 实现</div>
+    </div>
+</div>
+
+<!-- 功能特性 -->
+<section class="section fade-in" id="features">
+    <div class="section-label">&#11088; 核心特性</div>
+    <h2 class="section-title">不止是对话，<br>是真正的 AI Agent</h2>
+    <p class="section-desc">
+        zyg's agent 将 AI 大模型与计算机操作深度融合，打造出真正能"动手"的智能助手，
+        让自然语言成为操控计算机的新方式。
+    </p>
+    <div class="features-grid">
+        <div class="feature-card" style="--accent: #7c8aff;">
+            <div class="feature-icon">&#129302;</div>
+            <h3>多提供商统一管理</h3>
+            <p>内置 OpenAI、Claude、Gemini、DeepSeek、GLM、Kimi 等 12 大真实 AI 提供商，一键切换。同时支持添加任意 OpenAI 兼容格式的自定义 API，灵活适配你的需求。</p>
+        </div>
+        <div class="feature-card" style="--accent: #22c55e;">
+            <div class="feature-icon">&#128187;</div>
+            <h3>完整的计算机控制</h3>
+            <p>内置 10 大专业工具：执行终端命令、读写文件、管理进程、搜索文件、安装 Python 包、获取系统信息、打开网页。AI 可以真正"动手"帮你完成任务，而非仅仅提供建议。</p>
+        </div>
+        <div class="feature-card" style="--accent: #f59e0b;">
+            <div class="feature-icon">&#127912;</div>
+            <h3>精美 Web 管理界面</h3>
+            <p>暗色主题设计，响应式布局。对话管理、API 配置、提示词编辑、实时日志监控——所有操作都在浏览器中完成，无需任何额外工具。支持局域网远程访问。</p>
+        </div>
+        <div class="feature-card" style="--accent: #ef4444;">
+            <div class="feature-icon">&#128295;</div>
+            <h3>智能工具调用链</h3>
+            <p>AI 自动解析用户意图，自主选择并组合调用多个工具完成任务。支持最多 10 轮工具调用循环，让 AI 能处理复杂的多步骤任务。每次工具调用都实时可见，过程透明可控。</p>
+        </div>
+        <div class="feature-card" style="--accent: #06b6d4;">
+            <div class="feature-icon">&#128274;</div>
+            <h3>提示词管理系统</h3>
+            <p>内置提示词管理模块，可创建多套系统提示词模板并自由切换。自定义 AI 角色和行为模式，从编程助手到文件管家，一键切换不同的 Agent 人格。</p>
+        </div>
+        <div class="feature-card" style="--accent: #a78bfa;">
+            <div class="feature-icon">&#128640;</div>
+            <h3>轻量纯 Python</h3>
+            <p>仅依赖 Flask + Requests 两个核心库，部署极简。一个 Python 文件即可启动完整服务。支持 PyArmor 代码混淆保护源码，提供 Windows/Linux 跨平台运行支持。</p>
+        </div>
+    </div>
+</section>
+
+<!-- 工作流程 -->
+<section class="section fade-in" id="workflow">
+    <div class="section-label">&#128736; 工作原理</div>
+    <h2 class="section-title">三步完成 AI Agent 交互</h2>
+    <p class="section-desc">
+        基于自定义工具调用协议，AI 能够理解自然语言指令并自动转化为计算机操作。
+    </p>
+    <div class="workflow">
+        <div class="workflow-step">
+            <div class="workflow-num">1</div>
+            <div>
+                <h4>用户发送指令</h4>
+                <p>用自然语言描述需求</p>
+            </div>
+        </div>
+        <div class="workflow-arrow">&#10142;</div>
+        <div class="workflow-step">
+            <div class="workflow-num">2</div>
+            <div>
+                <h4>AI 规划与调用</h4>
+                <p>自动选择工具执行操作</p>
+            </div>
+        </div>
+        <div class="workflow-arrow">&#10142;</div>
+        <div class="workflow-step">
+            <div class="workflow-num">3</div>
+            <div>
+                <h4>返回结果</h4>
+                <p>汇总信息回复用户</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 支持的提供商 -->
+<section class="section fade-in" id="providers">
+    <div class="section-label">&#127760; 全球覆盖</div>
+    <h2 class="section-title">接入全球顶尖 AI 模型</h2>
+    <p class="section-desc">
+        预置 12 家真实 AI 服务商的 API 配置，涵盖国内外主流大模型，同时支持任意 OpenAI 兼容的自定义接入。
+    </p>
+    <div class="providers-grid">
+        <div class="provider-badge">
+            <div class="provider-logo" style="color:#10a37f;">O</div>
+            <div class="provider-info">
+                <h4>OpenAI</h4>
+                <p>GPT-4o / o1 / o3</p>
+            </div>
+        </div>
+        <div class="provider-badge">
+            <div class="provider-logo" style="color:#d4a373;">C</div>
+            <div class="provider-info">
+                <h4>Anthropic</h4>
+                <p>Claude Opus 4 / Sonnet 4</p>
+            </div>
+        </div>
+        <div class="provider-badge">
+            <div class="provider-logo" style="color:#4285f4;">G</div>
+            <div class="provider-info">
+                <h4>Google</h4>
+                <p>Gemini 2.5 Pro / Flash</p>
+            </div>
+        </div>
+        <div class="provider-badge">
+            <div class="provider-logo" style="color:#4d6bfe;">D</div>
+            <div class="provider-info">
+                <h4>DeepSeek</h4>
+                <p>DeepSeek V3 / R1</p>
+            </div>
+        </div>
+        <div class="provider-badge">
+            <div class="provider-logo" style="color:#3b6ff5;">G</div>
+            <div class="provider-info">
+                <h4>智谱 GLM</h4>
+                <p>GLM-4 Plus / Flash</p>
+            </div>
+        </div>
+        <div class="provider-badge">
+            <div class="provider-logo" style="color:#000;">K</div>
+            <div class="provider-info">
+                <h4>月之暗面</h4>
+                <p>Kimi 128K / 32K</p>
+            </div>
+        </div>
+        <div class="provider-badge">
+            <div class="provider-logo" style="color:#ff6a00;">A</div>
+            <div class="provider-info">
+                <h4>阿里通义千问</h4>
+                <p>Qwen Max / Plus</p>
+            </div>
+        </div>
+        <div class="provider-badge">
+            <div class="provider-logo" style="color:#2932e1;">B</div>
+            <div class="provider-info">
+                <h4>百度文心</h4>
+                <p>ERNIE 4.0 / 3.5</p>
+            </div>
+        </div>
+        <div class="provider-badge">
+            <div class="provider-logo" style="color:#8b5cf6;">Y</div>
+            <div class="provider-info">
+                <h4>零一万物</h4>
+                <p>Yi Large / Vision</p>
+            </div>
+        </div>
+        <div class="provider-badge">
+            <div class="provider-logo" style="color:#f43f5e;">M</div>
+            <div class="provider-info">
+                <h4>MiniMax</h4>
+                <p>MiniMax-Text-01</p>
+            </div>
+        </div>
+        <div class="provider-badge">
+            <div class="provider-logo" style="color:#06b6d4;">S</div>
+            <div class="provider-info">
+                <h4>硅基流动</h4>
+                <p>DeepSeek / Qwen / GLM</p>
+            </div>
+        </div>
+        <div class="provider-badge">
+            <div class="provider-logo" style="color:#f55036;">G</div>
+            <div class="provider-info">
+                <h4>Groq</h4>
+                <p>Llama 3.3 / Mixtral</p>
+            </div>
+        </div>
+    </div>
+    <div style="text-align:center;margin-top:32px;font-size:14px;color:#6a6a80;">
+        &#9889; 支持添加任意 OpenAI 兼容格式的自定义 API 提供商
+    </div>
+</section>
+
+<!-- AI 工具集 -->
+<section class="section fade-in tools-section" id="tools">
+    <div class="section-label">&#128295; 工具箱</div>
+    <h2 class="section-title">10 大计算机控制工具</h2>
+    <p class="section-desc">
+        AI 可以调用以下工具直接操控你的计算机，执行真实操作，而非仅仅生成文字回复。
+    </p>
+    <div class="tools-grid">
+        <div class="tool-card">
+            <span class="tool-emoji">&#128424;</span>
+            <h4>Shell 执行</h4>
+            <p>运行 CMD / PowerShell / Bash 命令</p>
+        </div>
+        <div class="tool-card">
+            <span class="tool-emoji">&#128196;</span>
+            <h4>读取文件</h4>
+            <p>查看任意文本文件内容</p>
+        </div>
+        <div class="tool-card">
+            <span class="tool-emoji">&#128221;</span>
+            <h4>写入文件</h4>
+            <p>创建或修改文件，自动建目录</p>
+        </div>
+        <div class="tool-card">
+            <span class="tool-emoji">&#128193;</span>
+            <h4>目录浏览</h4>
+            <p>列出文件夹内的文件列表</p>
+        </div>
+        <div class="tool-card">
+            <span class="tool-emoji">&#128465;</span>
+            <h4>删除文件</h4>
+            <p>删除文件或整个目录</p>
+        </div>
+        <div class="tool-card">
+            <span class="tool-emoji">&#128228;</span>
+            <h4>移动/重命名</h4>
+            <p>移动或重命名文件与目录</p>
+        </div>
+        <div class="tool-card">
+            <span class="tool-emoji">&#128187;</span>
+            <h4>系统信息</h4>
+            <p>获取 OS、CPU、内存、磁盘信息</p>
+        </div>
+        <div class="tool-card">
+            <span class="tool-emoji">&#128230;</span>
+            <h4>安装包</h4>
+            <p>通过 pip 安装 Python 库</p>
+        </div>
+        <div class="tool-card">
+            <span class="tool-emoji">&#128269;</span>
+            <h4>文件搜索</h4>
+            <p>按模式搜索匹配的文件</p>
+        </div>
+        <div class="tool-card">
+            <span class="tool-emoji">&#127760;</span>
+            <h4>打开网页</h4>
+            <p>在默认浏览器中打开 URL</p>
+        </div>
+    </div>
+</section>
+
+<!-- 技术栈 -->
+<section class="section fade-in" id="tech">
+    <div class="section-label">&#128736; 技术架构</div>
+    <h2 class="section-title">简洁而强大的技术选型</h2>
+    <p class="section-desc">
+        整个项目仅依赖两个核心第三方库，保持极致轻量的同时，提供完整功能体验。
+    </p>
+    <div class="tech-stack" style="margin-bottom: 40px;">
+        <div class="tech-tag"><strong>Python 3.8+</strong> &nbsp; 核心语言</div>
+        <div class="tech-tag"><strong>Flask</strong> &nbsp; Web 服务框架</div>
+        <div class="tech-tag"><strong>SQLite</strong> &nbsp; 内嵌数据库</div>
+        <div class="tech-tag"><strong>Requests</strong> &nbsp; HTTP 客户端</div>
+        <div class="tech-tag"><strong>SSE</strong> &nbsp; 实时日志推送</div>
+        <div class="tech-tag"><strong>PyArmor</strong> &nbsp; 代码混淆保护</div>
+    </div>
+    <div class="features-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="feature-card" style="--accent: #22c55e;">
+            <div class="feature-icon">&#128245;</div>
+            <h3>单文件部署</h3>
+            <p>整个后端仅由 5 个 Python 文件组成，前端资源内嵌。无需 Node.js、无需 npm build，直接 python app.py 一键启动。真正的零配置开箱即用。</p>
+        </div>
+        <div class="feature-card" style="--accent: #f59e0b;">
+            <div class="feature-icon">&#128272;</div>
+            <h3>代码混淆保护</h3>
+            <p>内置 PyArmor 混淆方案，支持 Windows/Linux 跨平台发布。混淆后的代码以 .pyd / .so 格式运行，有效保护源代码知识产权，适合私有化部署和分发。</p>
+        </div>
+    </div>
+</section>
+
+<!-- 快速开始 -->
+<section class="section fade-in" id="quickstart">
+    <div class="section-label">&#9889; 快速开始</div>
+    <h2 class="section-title">三分钟启动你的 AI Agent</h2>
+    <p class="section-desc">
+        从安装到运行，只需三个简单步骤，无需复杂配置。
+    </p>
+    <div class="quickstart-steps">
+        <div class="step-card">
+            <div class="step-number">1</div>
+            <h4>安装依赖</h4>
+            <p>确保已安装 Python 3.8 或更高版本，然后安装所需的三个依赖包。</p>
+            <div class="code-block"><span class="cmd">pip install flask requests flask-cors</span></div>
+        </div>
+        <div class="step-card">
+            <div class="step-number">2</div>
+            <h4>启动服务</h4>
+            <p>运行启动脚本或直接执行主程序，服务将在 5000 端口启动。</p>
+            <div class="code-block"><span class="cmd">python app.py</span>
+<span class="comment"># Windows 双击 start.bat 亦可</span></div>
+        </div>
+        <div class="step-card">
+            <div class="step-number">3</div>
+            <h4>配置 API Key</h4>
+            <p>打开浏览器访问管理界面，在「API 提供商」页面设置你的 API Key 并激活。</p>
+            <div class="code-block"><span class="comment"># 浏览器打开</span>
+<span class="cmd">http://localhost:5000</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- 底部 CTA -->
+<section class="cta-section fade-in">
+    <div class="cta-box">
+        <h2>准备好了吗？</h2>
+        <p>释放 AI 的真正潜力，让你的计算机拥有智能助手。</p>
+        <a href="#quickstart" class="btn-hero btn-hero-primary" style="font-size:18px;padding:16px 36px;">
+            &#9889; 立即开始使用
+        </a>
+    </div>
+</section>
+
+<!-- Footer -->
+<div class="footer">
+    <div class="footer-left">
+        <img src="logo.jpg" alt="logo">
+        <span>zyg's agent &copy; 2025</span>
+    </div>
+    <div class="footer-right">
+        纯 Python 构建 &middot; 跨平台支持 &middot; 开箱即用
+    </div>
+</div>
+
+<script>
+// ==================== 粒子背景 ====================
+(function() {
+    const canvas = document.getElementById('particles-canvas');
+    const ctx = canvas.getContext('2d');
+    let particles = [];
+    let w, h;
+
+    function resize() {
+        w = canvas.width = window.innerWidth;
+        h = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // 创建粒子
+    for (let i = 0; i < 60; i++) {
+        particles.push({
+            x: Math.random() * w,
+            y: Math.random() * h,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.4,
+            r: Math.random() * 2 + 0.5,
+            o: Math.random() * 0.5 + 0.1
+        });
+    }
+
+    function animate() {
+        ctx.clearRect(0, 0, w, h);
+        particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            if (p.x < 0) p.x = w;
+            if (p.x > w) p.x = 0;
+            if (p.y < 0) p.y = h;
+            if (p.y > h) p.y = 0;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(124, 138, 255, ${p.o})`;
+            ctx.fill();
+        });
+
+        // 连线
+        for (let i = 0; i < particles.length; i++) {
+            for (let j = i + 1; j < particles.length; j++) {
+                const dx = particles[i].x - particles[j].x;
+                const dy = particles[i].y - particles[j].y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < 150) {
+                    ctx.beginPath();
+                    ctx.moveTo(particles[i].x, particles[i].y);
+                    ctx.lineTo(particles[j].x, particles[j].y);
+                    ctx.strokeStyle = `rgba(124, 138, 255, ${0.06 * (1 - dist / 150)})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.stroke();
+                }
+            }
+        }
+        requestAnimationFrame(animate);
+    }
+    animate();
+})();
+
+// ==================== 导航栏滚动效果 ====================
+window.addEventListener('scroll', () => {
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// ==================== 滚动淡入动画 ====================
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ==================== 平滑滚动 ====================
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    });
+});
+</script>
+
+</body>
+</html>
