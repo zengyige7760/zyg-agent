@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>zyg's agent</title>
+    <link rel="icon" type="image/jpeg" href="/static/logo.jpg">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- 侧边栏 -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo">
+                    <img src="/static/logo.jpg" style="width:36px;height:36px;border-radius:10px;object-fit:cover;">
+                    <span>zyg's agent</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-section-title">功能</div>
+                <div class="nav-item active" data-page="chat" onclick="switchPage('chat')">
+                    <span class="nav-icon">💬</span>
+                    <span>AI 对话</span>
+                </div>
+                <div class="nav-item" data-page="providers" onclick="switchPage('providers')">
+                    <span class="nav-icon">🔌</span>
+                    <span>API 提供商</span>
+                </div>
+                <div class="nav-item" data-page="prompts" onclick="switchPage('prompts')">
+                    <span class="nav-icon">📝</span>
+                    <span>提示词管理</span>
+                </div>
+                <div class="nav-item" data-page="logs" onclick="switchPage('logs')">
+                    <span class="nav-icon">📋</span>
+                    <span>服务器日志</span>
+                </div>
+                <div class="nav-section-title">系统</div>
+                <div class="nav-item" data-page="settings" onclick="switchPage('settings')">
+                    <span class="nav-icon">⚙️</span>
+                    <span>设置</span>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span id="statusText">服务运行中</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 主内容 -->
+        <main class="main-content">
+            <!-- ========== 对话页面 ========== -->
+            <div class="page active" id="page-chat">
+                <div class="chat-layout">
+                    <div class="chat-sessions">
+                        <div class="sessions-header">
+                            <span style="font-size:14px;font-weight:600;">对话列表</span>
+                            <button class="btn btn-sm btn-primary" onclick="createSession()">+ 新建</button>
+                        </div>
+                        <div class="sessions-list" id="sessionsList"></div>
+                    </div>
+                    <div class="chat-main">
+                        <div class="chat-messages" id="chatMessages">
+                            <div class="chat-welcome" id="chatWelcome">
+                                <img src="/static/logo.jpg" style="width:64px;height:64px;border-radius:16px;object-fit:cover;opacity:0.7;">
+                                <h3>zyg's agent</h3>
+                                <p>拥有计算机完全控制权限的 AI 助手。可以执行命令、读写文件、安装软件、搜索文件等。</p>
+                                <p>请先在「API 提供商」页面配置 API Key 并激活提供商。</p>
+                            </div>
+                        </div>
+                        <div class="chat-input-area">
+                            <div class="chat-options">
+                                <label>
+                                    模型:
+                                    <select id="chatModel" onchange="saveChatSettings()"></select>
+                                </label>
+                                <div class="toggle-tools active" id="toggleTools" onclick="toggleToolMode()">
+                                    🔧 工具调用: 开启
+                                </div>
+                            </div>
+                            <div class="chat-input-wrapper">
+                                <textarea class="textarea" id="chatInput" placeholder="输入消息，按 Enter 发送，Shift+Enter 换行..." rows="1"
+                                    onkeydown="handleChatKeydown(event)" oninput="autoResize(this)"></textarea>
+                                <button class="btn btn-primary" onclick="sendMessage()" id="sendBtn">发送</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 提供商页面 ========== -->
+            <div class="page" id="page-providers">
+                <div class="topbar">
+                    <div class="topbar-title">API 提供商管理</div>
+                    <div class="topbar-actions">
+                        <button class="btn btn-primary" onclick="showAddProviderModal()">+ 添加自定义提供商</button>
+                    </div>
+                </div>
+                <div class="page-content">
+                    <div class="providers-grid" id="providersGrid"></div>
+                </div>
+            </div>
+
+            <!-- ========== 提示词页面 ========== -->
+            <div class="page" id="page-prompts">
+                <div class="topbar">
+                    <div class="topbar-title">系统提示词管理</div>
+                    <div class="topbar-actions">
+                        <button class="btn btn-primary" onclick="showAddPromptModal()">+ 新建提示词</button>
+                    </div>
+                </div>
+                <div class="page-content">
+                    <div id="promptsList"></div>
+                </div>
+            </div>
+
+            <!-- ========== 日志页面 ========== -->
+            <div class="page" id="page-logs">
+                <div class="topbar">
+                    <div class="topbar-title">服务器日志</div>
+                    <div class="topbar-actions">
+                        <button class="btn" onclick="refreshLogs()">刷新</button>
+                        <button class="btn btn-danger" onclick="clearLogDisplay()">清空显示</button>
+                    </div>
+                </div>
+                <div class="page-content" style="padding:12px;">
+                    <div class="log-container" id="logContainer">
+                        <div class="empty-state">
+                            <div class="empty-icon">📋</div>
+                            <p>等待日志...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========== 设置页面 ========== -->
+            <div class="page" id="page-settings">
+                <div class="topbar">
+                    <div class="topbar-title">系统设置</div>
+                </div>
+                <div class="page-content">
+                    <div class="card">
+                        <div class="settings-section">
+                            <h3>系统信息</h3>
+                            <div class="setting-item">
+                                <div>
+                                    <div class="setting-label">Python 版本</div>
+                                    <div class="setting-desc" id="pythonVersion">-</div>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div>
+                                    <div class="setting-label">操作系统</div>
+                                    <div class="setting-desc" id="osInfo">-</div>
+                                </div>
+                            </div>
+                            <div class="setting-item">
+                                <div>
+                                    <div class="setting-label">服务地址</div>
+                                    <div class="setting-desc" id="serverAddr">-</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="settings-section">
+                            <h3>数据管理</h3>
+                            <div class="setting-item">
+                                <div>
+                                    <div class="setting-label">清空所有聊天记录</div>
+                                    <div class="setting-desc">删除所有对话会话和消息</div>
+                                </div>
+                                <button class="btn btn-danger btn-sm" onclick="clearAllChats()">清空</button>
+                            </div>
+                            <div class="setting-item">
+                                <div>
+                                    <div class="setting-label">重置提供商配置</div>
+                                    <div class="setting-desc">重置所有提供商的 API Key</div>
+                                </div>
+                                <button class="btn btn-danger btn-sm" onclick="resetProviders()">重置</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="settings-section">
+                            <h3>关于</h3>
+                            <div class="setting-item">
+                                <div>
+                                    <div class="setting-label">zyg's agent</div>
+                                    <div class="setting-desc">纯 Python 实现的 AI Agent 平台，支持多提供商、计算机控制、图形化管理。<br>
+                                    类似 OpenClaw 的 Web 管理界面。</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 添加/编辑提供商模态框 -->
+    <div class="modal-overlay" id="providerModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="providerModalTitle">添加自定义提供商</div>
+                <button class="btn btn-icon" onclick="closeModal('providerModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editProviderId">
+                <div class="form-group">
+                    <label class="form-label">提供商名称 *</label>
+                    <input class="input" id="providerName" placeholder="例如: 我的自定义 API">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">API 地址 *</label>
+                    <input class="input" id="providerBaseUrl" placeholder="例如: https://api.example.com/v1">
+                    <div style="font-size:11px;color:var(--text-muted);margin-top:4px;">
+                        支持 OpenAI 兼容格式（/chat/completions）和 Anthropic 格式
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">API Key</label>
+                    <div class="input-group">
+                        <input class="input" id="providerApiKey" type="password" placeholder="sk-... 或留空稍后设置">
+                        <button class="toggle-visibility" onclick="togglePassword('providerApiKey', this)">👁</button>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">模型列表（每行一个，格式: 模型ID）</label>
+                    <textarea class="textarea" id="providerModels" rows="4" placeholder="gpt-4o&#10;gpt-3.5-turbo&#10;my-custom-model"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('providerModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveProvider()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 编辑 API Key 模态框 -->
+    <div class="modal-overlay" id="apiKeyModal">
+        <div class="modal" style="width:420px;">
+            <div class="modal-header">
+                <div class="modal-title" id="apiKeyModalTitle">设置 API Key</div>
+                <button class="btn btn-icon" onclick="closeModal('apiKeyModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="apiKeyProviderId">
+                <div class="form-group">
+                    <label class="form-label">API Key</label>
+                    <div class="input-group">
+                        <input class="input" id="apiKeyValue" type="password" placeholder="输入 API Key">
+                        <button class="toggle-visibility" onclick="togglePassword('apiKeyValue', this)">👁</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('apiKeyModal')">取消</button>
+                <button class="btn btn-primary" onclick="saveApiKey()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 提示词模态框 -->
+    <div class="modal-overlay" id="promptModal">
+        <div class="modal">
+            <div class="modal-header">
+                <div class="modal-title" id="promptModalTitle">新建提示词</div>
+                <button class="btn btn-icon" onclick="closeModal('promptModal')">✕</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editPromptId">
+                <div class="form-group">
+                    <label class="form-label">名称 *</label>
+                    <input class="input" id="promptName" placeholder="例如: 编程助手">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">内容 *</label>
+                    <textarea class="textarea" id="promptContent" rows="8" placeholder="输入系统提示词内容..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;color:var(--text-secondary);">
+                        <input type="checkbox" id="promptDefault"> 设为默认提示词
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" onclick="closeModal('promptModal')">取消</button>
+                <button class="btn btn-primary" onclick="savePrompt()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast 容器 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
